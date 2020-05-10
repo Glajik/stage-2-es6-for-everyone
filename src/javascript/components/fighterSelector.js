@@ -2,15 +2,17 @@ import { createElement } from '../helpers/domHelper';
 import { renderArena } from './arena';
 import versusImg from '../../../resources/versus.png';
 import { createFighterPreview } from './fighterPreview';
+import { fighterService } from '../services/fightersService';
 
 export function createFightersSelector() {
   let selectedFighters = [];
 
   return async (event, fighterId) => {
     const fighter = await getFighterInfo(fighterId);
+    const maybe = player => player ?? fighter;
     const [playerOne, playerTwo] = selectedFighters;
-    const firstFighter = playerOne ?? fighter;
-    const secondFighter = Boolean(playerOne) ? playerTwo ?? fighter : playerTwo;
+    const firstFighter = maybe(playerOne);
+    const secondFighter = Boolean(playerOne) ? maybe(playerTwo) : null;
     selectedFighters = [firstFighter, secondFighter];
 
     renderSelectedFighters(selectedFighters);
@@ -20,7 +22,16 @@ export function createFightersSelector() {
 const fighterDetailsMap = new Map();
 
 export async function getFighterInfo(fighterId) {
-  // get fighter info from fighterDetailsMap or from service and write it to fighterDetailsMap
+  if (fighterDetailsMap.has(fighterId)) {
+    return fighterDetailsMap.get(fighterId);
+  };
+  try {
+    const fighterDetails = await fighterService.getFighterDetails(fighterId);
+    fighterDetailsMap.set(fighterId, fighterDetails);
+    return fighterDetails;
+  } catch (error) {
+    console.log(error);
+  }
 }
 
 function renderSelectedFighters(selectedFighters) {
