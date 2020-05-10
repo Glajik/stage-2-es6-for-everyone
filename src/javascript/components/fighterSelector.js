@@ -9,9 +9,10 @@ export function createFightersSelector() {
 
   return async (event, fighterId) => {
     const fighter = await getFighterInfo(fighterId);
+    const maybe = player => player ?? fighter;
     const [playerOne, playerTwo] = selectedFighters;
-    const firstFighter = playerOne ?? fighter;
-    const secondFighter = Boolean(playerOne) ? playerTwo ?? fighter : playerTwo;
+    const firstFighter = maybe(playerOne);
+    const secondFighter = Boolean(playerOne) ? maybe(playerTwo) : null;
     selectedFighters = [firstFighter, secondFighter];
 
     renderSelectedFighters(selectedFighters);

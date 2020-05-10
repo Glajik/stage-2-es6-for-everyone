@@ -11,3 +11,22 @@
 .fighter-preview___left {
   align-items: flex-start;
 }
+
+.fighter-preview___img {
+  height: 380px;
+}
+
+.fighter-preview___right img {
+  transform: scaleX(-1);
+}
+
+.fighter-preview___select-fighter {
+  color: black;
+  -webkit-text-fill-color: white;
+  -webkit-text-stroke-width: 1px;
+  font-size: 46px;
+  font-family: 'Arial Black';
+  font-weight: 700;
+  text-transform: uppercase;
+  text-align: center;
+}
