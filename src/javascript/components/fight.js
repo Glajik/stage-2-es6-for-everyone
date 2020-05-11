@@ -97,12 +97,11 @@ export async function fight(firstFighter, secondFighter) {
       }
     };
 
-    const fromNow = (date) => {
+    const msFromNow = (date) => {
       if (!date) {
         return 0;
       }
-      const diffMs = Math.abs(new Date().getTime() - new Date(date).getTime());
-      return diffMs / 1000;
+      return Math.abs(new Date().getTime() - new Date(date).getTime());
     }
 
     const canCrit = (player) => {
@@ -112,13 +111,13 @@ export async function fight(firstFighter, secondFighter) {
         .every(keyCode => state.keyCodeQueue.includes(keyCode));
 
         console.log('lastCritTime', lastCritTime);
-        console.log('fromNow(lastCritTime)', fromNow(lastCritTime));
+        console.log('fromNow(lastCritTime)', msFromNow(lastCritTime));
       
       if (!lastCritTime && gotCombination) {
         return true;
       }
             
-      return gotCombination && fromNow(lastCritTime) >= CRIT_DELAY_SECONDS;
+      return gotCombination && msFromNow(lastCritTime) > CRIT_DELAY_SECONDS * 1000 + 100;
     }
 
     const updateCritTime = player => state[player].lastCritTime = new Date();
