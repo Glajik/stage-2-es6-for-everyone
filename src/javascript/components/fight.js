@@ -91,13 +91,22 @@ export async function fight(firstFighter, secondFighter) {
       return resolve(winner);
     }
 
+    const hasBlock = player => state[player] === BLOCK;
+
     const attackBy = (player) => {
       if (!canAttack(player)) {
         return;
       }
       setPlayerState(player, ATTACK);
       const [attacker, defender] = fighters[player];
-      const damage = getDamage(attacker, defender);
+      const otherPlayer = defender._id;
+
+      const damage = (
+        hasBlock(otherPlayer)
+          ? getDamage(attacker, defender)
+          : getHitPower(attacker)
+      );
+      
       if (damage >= defender.health) {
         defender.health = 0;
         updateIndicator(defender);
@@ -106,6 +115,13 @@ export async function fight(firstFighter, secondFighter) {
       defender.health -= damage;
       updateIndicator(defender);
       console.log(`Defender ${defender.name}, ${defender.health}`);
+    }
+
+    const blockBy = (player) => {
+      if (!canBlock(player)) {
+        return;
+      }
+      setPlayerState(player, BLOCK);
     }
 
     const onKeyDown = (event) => {
@@ -117,7 +133,15 @@ export async function fight(firstFighter, secondFighter) {
         case controls.PlayerTwoAttack:
           attackBy(playerTwo);
           break;
-      
+
+        case controls.PlayerOneBlock:
+          blockBy(playerOne);
+          break;
+
+        case controls.PlayerTwoBlock:
+          blockBy(playerTwo);
+          break;
+
         default:
           console.log('Ignored key down:', event.code);
           break;
@@ -127,13 +151,15 @@ export async function fight(firstFighter, secondFighter) {
     const onKeyUp = (event) => {
       switch (event.code) {
         case controls.PlayerOneAttack:
+        case controls.PlayerOneBlock:
           setPlayerState(playerOne, IDLE);
           break;
         
         case controls.PlayerTwoAttack:
+        case controls.PlayerTwoBlock:
           setPlayerState(playerTwo, IDLE);
           break;
-      
+
         default:
           console.log('Ignored key up:', event.code);
           break;
