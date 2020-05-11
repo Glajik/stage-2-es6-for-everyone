@@ -106,7 +106,7 @@ export async function fight(firstFighter, secondFighter) {
           ? getDamage(attacker, defender)
           : getHitPower(attacker)
       );
-      
+
       if (damage >= defender.health) {
         defender.health = 0;
         updateIndicator(defender);
@@ -151,13 +151,19 @@ export async function fight(firstFighter, secondFighter) {
     const onKeyUp = (event) => {
       switch (event.code) {
         case controls.PlayerOneAttack:
+          if (state[playerOne] === BLOCK) {
+            break;
+          }
         case controls.PlayerOneBlock:
           setPlayerState(playerOne, IDLE);
           break;
-        
-        case controls.PlayerTwoAttack:
-        case controls.PlayerTwoBlock:
-          setPlayerState(playerTwo, IDLE);
+
+          case controls.PlayerTwoAttack:
+            if (state[playerTwo] === BLOCK) {
+              break;
+            }
+          case controls.PlayerTwoBlock:
+            setPlayerState(playerTwo, IDLE);
           break;
 
         default:
