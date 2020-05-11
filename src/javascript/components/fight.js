@@ -243,16 +243,21 @@ export async function fight(firstFighter, secondFighter) {
   });
 }
 
-const withChance = (value) => {
-  const chance = Math.random() + 1;
-  return value * chance;
-}
-
 // return hit power
-export const getHitPower = (fighter) => withChance(fighter.attack);
+export function getHitPower(fighter) {
+  const { attack } = fighter;
+  const criticalHitChance = Math.random() + 1;
+  const power = attack * criticalHitChance;
+  return power;
+} 
 
 // return block power
-export const getBlockPower = (fighter) => withChance(fighter.defense);
+export function getBlockPower(fighter) {
+  const { defense } = fighter;
+  const dodgeChance = Math.random() + 1;
+  const power = defense * dodgeChance;
+  return power;
+}
 
 // return damage
 export function getDamage(attacker, defender) {
