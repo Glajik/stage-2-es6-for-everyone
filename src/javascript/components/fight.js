@@ -97,12 +97,11 @@ export async function fight(firstFighter, secondFighter) {
       }
     };
 
-    const fromNow = (date) => {
+    const msFromNow = (date) => {
       if (!date) {
         return 0;
       }
-      const diffMs = Math.abs(new Date().getTime() - new Date(date).getTime());
-      return diffMs / 1000;
+      return Math.abs(new Date().getTime() - new Date(date).getTime());
     }
 
     const canCrit = (player) => {
@@ -112,13 +111,13 @@ export async function fight(firstFighter, secondFighter) {
         .every(keyCode => state.keyCodeQueue.includes(keyCode));
 
         console.log('lastCritTime', lastCritTime);
-        console.log('fromNow(lastCritTime)', fromNow(lastCritTime));
+        console.log('fromNow(lastCritTime)', msFromNow(lastCritTime));
       
       if (!lastCritTime && gotCombination) {
         return true;
       }
             
-      return gotCombination && fromNow(lastCritTime) >= CRIT_DELAY_SECONDS;
+      return gotCombination && msFromNow(lastCritTime) > CRIT_DELAY_SECONDS * 1000 + 100;
     }
 
     const updateCritTime = player => state[player].lastCritTime = new Date();
@@ -151,7 +150,9 @@ export async function fight(firstFighter, secondFighter) {
       const damage = (
         crit
           ? getHitPower(attacker) * 2
-          : getDamage(attacker, defender, hasBlock)
+          : hasBlock(defender._id)
+            ? 0
+            : getDamage(attacker, defender)
       );
 
       if (damage >= defender.health) {
@@ -242,22 +243,24 @@ export async function fight(firstFighter, secondFighter) {
   });
 }
 
-const withChance = (value) => {
-  const chance = Math.random() + 1;
-  return value * chance;
-}
-
 // return hit power
-export const getHitPower = (fighter) => withChance(fighter.attack);
+export function getHitPower(fighter) {
+  const { attack } = fighter;
+  const criticalHitChance = Math.random() + 1;
+  const power = attack * criticalHitChance;
+  return power;
+} 
 
 // return block power
-export const getBlockPower = (fighter) => withChance(fighter.defense);
+export function getBlockPower(fighter) {
+  const { defense } = fighter;
+  const dodgeChance = Math.random() + 1;
+  const power = defense * dodgeChance;
+  return power;
+}
 
 // return damage
-export function getDamage(attacker, defender, hasBlock) {
-  if (!hasBlock(defender._id)) {
-    return getHitPower(attacker);
-  }
+export function getDamage(attacker, defender) {
   const damage = getHitPower(attacker) - getBlockPower(defender);
   return damage > 0 ? damage : 0;
 }
