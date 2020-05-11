@@ -1,6 +1,7 @@
 import { showModal } from './modal';
 import { createElement } from '../../helpers/domHelper';
 import { createFighterImage } from '../fighterPreview';
+import App from '../../app';
 
 // call showModal function 
 export function showWinnerModal(fighter) {
@@ -26,5 +27,10 @@ export function showWinnerModal(fighter) {
   showModal({
     title: `Winner is ${name}! Good game!!`,
     bodyElement,
+    onClose: () => {
+      const root = document.getElementById('root');
+      root.innerHTML = '';
+      new App();
+    },
   });
 }
