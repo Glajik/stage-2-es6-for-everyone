@@ -17,16 +17,25 @@ export async function fight(firstFighter, secondFighter) {
       [playerTwo]: [secondFighter, firstFighter],
     };
 
+    // Players state
     const IDLE = 'IDLE';
     const ATTACK = 'ATTACK';
     const BLOCK = 'BLOCK';
 
+    // Game state
+    const PLAYING = 'PLAYING';
+    const FINISH = 'FINISH';
+
     const state = {
       [playerOne]: IDLE, // 'ATTACK' | 'BLOCK'
       [playerTwo]: IDLE, // 'ATTACK' | 'BLOCK'
+      game: PLAYING,
     }
 
     const canBlock = (player) => {
+      if (state.game === FINISH) {
+        return false;
+      }
       switch (state[player]) {
         case IDLE:
         case ATTACK:
@@ -37,6 +46,9 @@ export async function fight(firstFighter, secondFighter) {
     };
 
     const canAttack = (player) => {
+      if (state.game === FINISH) {
+        return false;
+      }
       switch (state[player]) {
         case IDLE:
           return true;
@@ -45,18 +57,31 @@ export async function fight(firstFighter, secondFighter) {
       }
     };
 
-    const setState = (player, newState) => {
+    const setPlayerState = (player, newState) => {
       state[player] = newState;
       console.log('State changed, ', playerById[player], state[player]);
+    }
+
+    const finishGame = (winner) => {
+      if (state.game !== PLAYING) {
+        return;
+      }
+      state.game = FINISH;
+      return resolve(winner);
     }
 
     const attackBy = (player) => {
       if (!canAttack(player)) {
         return;
       }
-      setState(player, ATTACK);
+      setPlayerState(player, ATTACK);
       const [attacker, defender] = fighters[player];
-      defender.health -= getDamage(attacker, defender);
+      const damage = getDamage(attacker, defender);
+      if (damage >= defender.health) {
+        defender.health = 0;
+        return finishGame(attacker);
+      }
+      defender.health -= damage;
       console.log(`Defender ${defender.name}, ${defender.health}`);
     }
 
@@ -79,11 +104,11 @@ export async function fight(firstFighter, secondFighter) {
     const onKeyUp = (event) => {
       switch (event.code) {
         case controls.PlayerOneAttack:
-          setState(playerOne, IDLE);
+          setPlayerState(playerOne, IDLE);
           break;
         
         case controls.PlayerTwoAttack:
-          setState(playerTwo, IDLE);
+          setPlayerState(playerTwo, IDLE);
           break;
       
         default:
@@ -94,8 +119,6 @@ export async function fight(firstFighter, secondFighter) {
 
     document.addEventListener('keydown', event => onKeyDown(event), true);
     document.addEventListener('keyup', event => onKeyUp(event), true);
-
-    resolve(firstFighter);
   });
 }
 
