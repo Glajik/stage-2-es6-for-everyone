@@ -151,7 +151,9 @@ export async function fight(firstFighter, secondFighter) {
       const damage = (
         crit
           ? getHitPower(attacker) * 2
-          : getDamage(attacker, defender, hasBlock)
+          : hasBlock(defender._id)
+            ? 0
+            : getDamage(attacker, defender)
       );
 
       if (damage >= defender.health) {
@@ -254,10 +256,7 @@ export const getHitPower = (fighter) => withChance(fighter.attack);
 export const getBlockPower = (fighter) => withChance(fighter.defense);
 
 // return damage
-export function getDamage(attacker, defender, hasBlock) {
-  if (!hasBlock(defender._id)) {
-    return getHitPower(attacker);
-  }
+export function getDamage(attacker, defender) {
   const damage = getHitPower(attacker) - getBlockPower(defender);
   return damage > 0 ? damage : 0;
 }
