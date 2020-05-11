@@ -10,3 +10,8 @@ export function createElement({ tagName, className, attributes = {} }) {
 
   return element;
 }
+
+export function addText(element, text) {
+  const node = document.createTextNode(text);
+  element.appendChild(node);
+}
