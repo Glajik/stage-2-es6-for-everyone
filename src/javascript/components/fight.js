@@ -171,23 +171,6 @@ export async function fight(firstFighter, secondFighter) {
       setPlayerState(player, BLOCK);
     }
 
-    const tryCritBy = (player) => {
-      if (canCrit(player)) {
-        const [attacker, defender] = fighters[player];
-        const damage = 
-        updateCritTime(player);
-      }
-
-      if (damage >= defender.health) {
-        defender.health = 0;
-        updateIndicator(defender);
-        return finishGame(attacker);
-      }
-      defender.health -= damage;
-      updateIndicator(defender);
-      console.log(`Defender ${defender.name}, ${defender.health}`);
-    }
-
     const onKeyDown = (event) => {
       switch (event.code) {
         case controls.PlayerOneAttack:
