@@ -1,5 +1,7 @@
 import { controls } from '../../constants/controls';
 
+const CRIT_DELAY_SECONDS = 10;
+
 export async function fight(firstFighter, secondFighter) {
   return new Promise((resolve) => {
     // resolve the promise with the winner when fight is over
@@ -15,6 +17,11 @@ export async function fight(firstFighter, secondFighter) {
     const maxHealthById = {
       [playerOne]: firstFighter.health,
       [playerTwo]: secondFighter.health,
+    };
+
+    const combinationsById = {
+      [playerOne]: controls.PlayerOneCriticalHitCombination,
+      [playerTwo]: controls.PlayerTwoCriticalHitCombination,
     };
 
     const indicatorById = {
@@ -37,10 +44,22 @@ export async function fight(firstFighter, secondFighter) {
     const FINISH = 'FINISH';
 
     const state = {
-      [playerOne]: IDLE, // 'ATTACK' | 'BLOCK'
-      [playerTwo]: IDLE, // 'ATTACK' | 'BLOCK'
+      [playerOne]: {
+        action: IDLE, // 'ATTACK' | 'BLOCK'
+        lastCritTime: null,
+      },
+      [playerTwo]: {
+        action: IDLE, // 'ATTACK' | 'BLOCK'
+        lastCritTime: null,
+      },
       game: PLAYING,
+      keyCodeQueue: [],
     }
+
+    const addToQueue = (keyKode) => {
+      const [, second, third] = state.keyCodeQueue;
+      state.keyCodeQueue = [second, third, keyKode];
+    };
 
     const updateIndicator = (fighter) => {
       const { _id, health } = fighter;
@@ -57,7 +76,7 @@ export async function fight(firstFighter, secondFighter) {
       if (state.game === FINISH) {
         return false;
       }
-      switch (state[player]) {
+      switch (state[player].action) {
         case IDLE:
         case ATTACK:
           return true;
@@ -70,7 +89,7 @@ export async function fight(firstFighter, secondFighter) {
       if (state.game === FINISH) {
         return false;
       }
-      switch (state[player]) {
+      switch (state[player].action) {
         case IDLE:
           return true;
         default:
@@ -78,9 +97,35 @@ export async function fight(firstFighter, secondFighter) {
       }
     };
 
+    const fromNow = (date) => {
+      if (!date) {
+        return 0;
+      }
+      const diffMs = Math.abs(new Date().getTime() - new Date(date).getTime());
+      return diffMs / 1000;
+    }
+
+    const canCrit = (player) => {
+      const { lastCritTime } = state[player];
+      
+      const gotCombination = combinationsById[player]
+        .every(keyCode => state.keyCodeQueue.includes(keyCode));
+
+        console.log('lastCritTime', lastCritTime);
+        console.log('fromNow(lastCritTime)', fromNow(lastCritTime));
+      
+      if (!lastCritTime && gotCombination) {
+        return true;
+      }
+            
+      return gotCombination && fromNow(lastCritTime) >= CRIT_DELAY_SECONDS;
+    }
+
+    const updateCritTime = player => state[player].lastCritTime = new Date();
+
     const setPlayerState = (player, newState) => {
-      state[player] = newState;
-      console.log('State changed, ', playerById[player], state[player]);
+      state[player].action = newState;
+      console.log('State changed, ', playerById[player], state[player].action);
     }
 
     const finishGame = (winner) => {
@@ -91,20 +136,22 @@ export async function fight(firstFighter, secondFighter) {
       return resolve(winner);
     }
 
-    const hasBlock = player => state[player] === BLOCK;
-
-    const attackBy = (player) => {
-      if (!canAttack(player)) {
+    const hasBlock = player => state[player].action === BLOCK;
+    
+    const attackBy = (player, crit = false) => {
+      if (!canAttack(player) && !crit) {
         return;
+      }
+      if (crit) {
+        updateCritTime(player);
       }
       setPlayerState(player, ATTACK);
       const [attacker, defender] = fighters[player];
-      const otherPlayer = defender._id;
 
       const damage = (
-        hasBlock(otherPlayer)
-          ? getDamage(attacker, defender)
-          : getHitPower(attacker)
+        crit
+          ? getHitPower(attacker) * 2
+          : getDamage(attacker, defender, hasBlock)
       );
 
       if (damage >= defender.health) {
@@ -122,6 +169,23 @@ export async function fight(firstFighter, secondFighter) {
         return;
       }
       setPlayerState(player, BLOCK);
+    }
+
+    const tryCritBy = (player) => {
+      if (canCrit(player)) {
+        const [attacker, defender] = fighters[player];
+        const damage = 
+        updateCritTime(player);
+      }
+
+      if (damage >= defender.health) {
+        defender.health = 0;
+        updateIndicator(defender);
+        return finishGame(attacker);
+      }
+      defender.health -= damage;
+      updateIndicator(defender);
+      console.log(`Defender ${defender.name}, ${defender.health}`);
     }
 
     const onKeyDown = (event) => {
@@ -143,7 +207,9 @@ export async function fight(firstFighter, secondFighter) {
           break;
 
         default:
-          console.log('Ignored key down:', event.code);
+          addToQueue(event.code);
+          canCrit(playerOne) && attackBy(playerOne, true)
+          canCrit(playerTwo) && attackBy(playerTwo, true);
           break;
       }
     };
@@ -167,7 +233,6 @@ export async function fight(firstFighter, secondFighter) {
           break;
 
         default:
-          console.log('Ignored key up:', event.code);
           break;
       }
     };
@@ -177,30 +242,26 @@ export async function fight(firstFighter, secondFighter) {
   });
 }
 
-// return damage
-export function getDamage(attacker, defender) {
-  const damage = getHitPower(attacker) - getBlockPower(defender);
-  if (damage < 0) {
-    return 0;
-  }
-  return damage;
-}
-
 const withChance = (value) => {
   const chance = Math.random() + 1;
   return value * chance;
 }
 
 // return hit power
-export function getHitPower(fighter) {
-  const value = withChance(fighter.attack);
-  console.log('Hit pow: ', value);
-  return value;
-}
+export const getHitPower = (fighter) => withChance(fighter.attack);
 
 // return block power
-export function getBlockPower(fighter) {
-  const value = withChance(fighter.defense);
-  console.log('block: ', value);
-  return value;
+export const getBlockPower = (fighter) => withChance(fighter.defense);
+
+// return damage
+export function getDamage(attacker, defender, hasBlock) {
+  if (!hasBlock(defender._id)) {
+    return getHitPower(attacker);
+  }
+  const damage = getHitPower(attacker) - getBlockPower(defender);
+  return damage > 0 ? damage : 0;
 }
+
+
+
+
