@@ -1,9 +1,4 @@
-import { createElement } from '../helpers/domHelper';
-
-function addText(element, text) {
-  const node = document.createTextNode(text);
-  element.appendChild(node);
-}
+import { createElement, addText } from '../helpers/domHelper';
 
 /*
   <section class="fighter-preview__info">
