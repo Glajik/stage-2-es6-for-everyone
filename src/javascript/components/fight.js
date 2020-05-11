@@ -11,6 +11,16 @@ export async function fight(firstFighter, secondFighter) {
       [playerOne]: 'playerOne',
       [playerTwo]: 'playerTwo',
     };
+
+    const maxHealthById = {
+      [playerOne]: firstFighter.health,
+      [playerTwo]: secondFighter.health,
+    };
+
+    const indicatorById = {
+      [playerOne]: document.getElementById('left-fighter-indicator'),
+      [playerTwo]: document.getElementById('right-fighter-indicator'),
+    };
     
     const fighters = {
       [playerOne]: [firstFighter, secondFighter],
@@ -30,6 +40,17 @@ export async function fight(firstFighter, secondFighter) {
       [playerOne]: IDLE, // 'ATTACK' | 'BLOCK'
       [playerTwo]: IDLE, // 'ATTACK' | 'BLOCK'
       game: PLAYING,
+    }
+
+    const updateIndicator = (fighter) => {
+      const { _id, health } = fighter;
+      const element = indicatorById[_id];
+      if (!element) {
+        return;
+      }
+      const maxHealth = maxHealthById[_id];
+      const percent = Math.round(100 / maxHealth * health);
+      element.setAttribute('style', `width: ${percent}%`);
     }
 
     const canBlock = (player) => {
@@ -79,9 +100,11 @@ export async function fight(firstFighter, secondFighter) {
       const damage = getDamage(attacker, defender);
       if (damage >= defender.health) {
         defender.health = 0;
+        updateIndicator(defender);
         return finishGame(attacker);
       }
       defender.health -= damage;
+      updateIndicator(defender);
       console.log(`Defender ${defender.name}, ${defender.health}`);
     }
 
@@ -117,8 +140,8 @@ export async function fight(firstFighter, secondFighter) {
       }
     };
 
-    document.addEventListener('keydown', event => onKeyDown(event), true);
-    document.addEventListener('keyup', event => onKeyUp(event), true);
+    document.addEventListener('keydown', onKeyDown, true);
+    document.addEventListener('keyup', onKeyUp, true);
   });
 }
 
